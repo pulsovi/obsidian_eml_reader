@@ -1,3 +1,5 @@
+# npm
 node_modules/
-
-main.js
+build
+*.mjs
+*.js
