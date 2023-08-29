@@ -1,8 +1,23 @@
-/*
+/* .eml styles */
+.embed-eml {
+  background: var(--code-background);
+  border-radius: var(--radius-s);
+  padding: var(--size-4-2) var(--size-4-4);
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.eml-header {
+  padding: 0 0 1em 1em;
+}
 
-If your plugin does not need CSS, delete this file.
+.eml-header .eml-head-label {
+  font-weight: bold;
+  text-transform: capitalize;
+}
 
-*/
+.eml-header .eml-head-label::after {
+  content:  " : ";
+}
+
+.embed-eml .eml-content {
+  width: 100%;
+}
