@@ -1,34 +1,39 @@
-name: Publish plugin
+name: Release Obsidian plugin
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
-
-env:
-  PLUGIN_NAME: ${{ github.event.repository.name }}
-  RELEASE_VER: ${{ github.ref }}
+      - "*"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Create release and Upload
-        id: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Build plugin
         run: |
-          TAG_NAME=${RELEASE_VER##*/}
-          mkdir "${PLUGIN_NAME}"
-          assets=()
-          for f in main.js manifest.json styles.css; do
-            if [[ -f $f ]]; then
-              cp $f "${PLUGIN_NAME}/"
-              assets+=(-a "$f")
-            fi
-          done
-          zip -r "$PLUGIN_NAME".zip "$PLUGIN_NAME"
-          hub release create "${assets[@]}" -a "$PLUGIN_NAME".zip -m "$TAG_NAME" "$TAG_NAME"
+          npm install
+          npm run build
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          tag="${GITHUB_REF##*/}"
+          ls .
+
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            main.js manifest.json styles.css
