@@ -5,6 +5,7 @@ import { MarkdownRenderChild } from 'obsidian';
 import type { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
 
 import { isObject } from './util/types/object';
+
 type Size = Record<'height' | 'width', string>;
 
 export default class Email extends MarkdownRenderChild {
@@ -27,8 +28,6 @@ export default class Email extends MarkdownRenderChild {
     if (!this.file) return;
     const content = await this.app.vault.cachedRead(this.file);
     const result = await mailparser(content);
-
-    console.info({ Email: this, parse: result, elem: this.containerEl.cloneNode(true) });
 
     const emailEl = this.containerEl.createDiv({ cls: 'embed-eml' });
     this.containerEl.replaceWith(emailEl);
@@ -100,7 +99,6 @@ export default class Email extends MarkdownRenderChild {
       height: (/^\d+$/u).test(height) ? `${height}px` : height,
       width: (/^\d+$/u).test(width) ? `${width}px` : width,
     };
-    console.info({ size, match, pair });
     return size;
   }
 
