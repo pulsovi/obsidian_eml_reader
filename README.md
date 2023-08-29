@@ -1,19 +1,20 @@
 # Email Reader
 
-This Obsidian plugin allows you to preview in your note the content of a `*.eml` file as like as you con preview image with `*.png` or `*.jpg` file.
+This Obsidian plugin allows you to preview in your note the content of a `*.eml` file as like as you can preview image with `*.png` or `*.jpg` file.
 
 ## Use cases
 
 In my daily use of Obsidian, I sometimes need to insert information from an email.
 
 I download the email in `*.eml` format and insert it into the note like an image.
+
 When I switch to Preview mode, the file is transformed into a button which contains the name of the file `*.eml`, if I click on the button, the file opens on my default email reader app, this which is very upsetting, you will agree.
 
-With this plugin the Obsidian Preview mode is able to directly display the content of the email as for an image.
+With this plugin the Obsidian Preview mode is able to directly display the content of the email.
 
 ## Usage
 
-Just import the `*.eml` file [the same way you would an image](https://help.obsidian.md/Linking+notes+and+files/Embedding+file).
+Just import the `*.eml` file [the same way you would an image](https://help.obsidian.md/Linking+notes+and+files/Embedding+files).
 
 You can define the dimensions of the frame that will contain the email, again like for an image, by adding `|640x480` to the link destination, where 640 is the width and 480 is the height.
 
@@ -27,15 +28,18 @@ Each no specified dimension will be autodetected.
 
 ## Alternatives
 
+The following plugins can be used for very similar purposes.
+
 ### Emails
 
-Allows you to import a `*.eml` file and transform it into markdown according to a customizable template and insert it into current note.
+Allows you to import an `*.eml` file, transform it into markdown according to a customizable template and insert it into current note.
 
 You can improve the result with the plugin [Email Block](obsidian://show-plugin?id=email-block-plugin)
 
-The advantage is that the content of the email appears directly in your note and is therefore searchable in the global Obsidian search.
+The advantage is that the content of the email appears directly in your obsidian raw note and is therefore searchable in the global Obsidian search.
 
 The downside is the same : _the content of the email appears directly in your note_.
+
 Depending on this content, you can consider it as pollution or data lose. 
 Either because you are not the author and want only _your_ words in your vault, or the email content is too big, or because you want to keep the exact traceability that the `*.eml` file provides but not the markdown.
 
@@ -43,7 +47,7 @@ You can get it at [github](https://github.com/SkepticMystic/email-templates)
 
 ### Obsidian Code Previews
 
-Retrieves the contents of a text-like file and displays it in code block.
+Get the contents of a text-like file and displays it in code block.
 
 With this plugin, you can display a tiny portion of the `*.eml` file that contains the desired text with this code:
 
