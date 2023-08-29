@@ -2,6 +2,8 @@
 
 This Obsidian plugin allows you to preview in your note the content of a `*.eml` file as like as you can preview image with `*.png` or `*.jpg` file.
 
+==Does not compatible with mobile devices==
+
 ## Use cases
 
 In my daily use of Obsidian, I sometimes need to insert information from an email.
@@ -36,7 +38,7 @@ Allows you to import an `*.eml` file, transform it into markdown according to a 
 
 You can improve the result with the plugin [Email Block](obsidian://show-plugin?id=email-block-plugin)
 
-The advantage is that the content of the email appears directly in your obsidian raw note and is therefore searchable in the global Obsidian search.
+The advantage is that the content of the email appears directly in your obsidian raw note and is therefore searchable in the global Obsidian search. the result is viewabl on mobile device.
 
 The downside is the same : _the content of the email appears directly in your note_.
 
