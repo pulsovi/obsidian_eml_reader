@@ -1,5 +1,4 @@
 import { encode as textToBase64 } from 'js-base64';
-import { simpleParser as mailparser } from 'mailparser';
 import { nanoid } from 'nanoid';
 import { MarkdownRenderChild } from 'obsidian';
 import type { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
