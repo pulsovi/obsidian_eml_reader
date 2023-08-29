@@ -31,7 +31,6 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
         run: |
           tag="${GITHUB_REF##*/}"
-          ls .
 
           gh release create "$tag" \
             --title="$tag" \

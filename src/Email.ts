@@ -1,11 +1,13 @@
+import { encode as textToBase64 } from 'js-base64';
 import { simpleParser as mailparser } from 'mailparser';
-import type { ParsedMail } from 'mailparser';
 import { nanoid } from 'nanoid';
 import { MarkdownRenderChild } from 'obsidian';
 import type { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
+import PostalMime from 'postal-mime';
+import type { Email as ParsedMail } from 'postal-mime';
 
 import { isObject } from './util/types/object';
-
+import { addressToHtml } from './util/html/email';
 type Size = Record<'height' | 'width', string>;
 
 export default class Email extends MarkdownRenderChild {
@@ -27,7 +29,7 @@ export default class Email extends MarkdownRenderChild {
   public async onload (): Promise<void> {
     if (!this.file) return;
     const content = await this.app.vault.cachedRead(this.file);
-    const result = await mailparser(content);
+    const result = await new PostalMime().parse(content);
 
     const emailEl = this.containerEl.createDiv({ cls: 'embed-eml' });
     this.containerEl.replaceWith(emailEl);
@@ -48,11 +50,11 @@ export default class Email extends MarkdownRenderChild {
       const valueEl = row.createSpan({ cls: `eml-head-value eml-head-value-${key}` });
       const header = mail[key];
 
-      if (typeof header === 'string') valueEl.setText(header);
-      else if (header instanceof Date) valueEl.setText(header.toLocaleString());
-      else if (Array.isArray(header))
-        valueEl.innerHTML = `<ul>${header.map(item => `<li>${item.html}</li>`).join('')}</ul>`;
-      else if (header) valueEl.innerHTML = header.html;
+      if (typeof header === 'string') {
+        if (key === 'date') valueEl.setText(new Date(header).toLocaleString());
+        else valueEl.setText(header);
+      }
+      else if (header) valueEl.innerHTML = addressToHtml(header);
     });
   }
 
@@ -68,7 +70,7 @@ export default class Email extends MarkdownRenderChild {
     const iframe = container.createEl('iframe', { cls: 'eml-content' });
 
     if (isAutoDetect) this.addSizeDetection(iframe, mail.html, size);
-    else iframe.setAttr('src', `data:text/html;base64,${Buffer.from(mail.html).toString('base64')}`);
+    else iframe.setAttr('src', `data:text/html;base64,${textToBase64(mail.html)}`);
 
     if (height !== 'auto') iframe.style.height = height;
     if (width !== 'auto') iframe.style.width = width;
@@ -132,6 +134,6 @@ export default class Email extends MarkdownRenderChild {
         iframe.style.width = `${data.width}px`;
     });
 
-    iframe.setAttr('src', `data:text/html;base64,${Buffer.from(iframeSrc).toString('base64')}`);
+    iframe.setAttr('src', `data:text/html;base64,${textToBase64(iframeSrc)}`);
   }
 }
