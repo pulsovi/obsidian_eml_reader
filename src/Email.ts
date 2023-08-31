@@ -32,6 +32,7 @@ export default class Email extends MarkdownRenderChild {
 
     const emailEl = this.containerEl.createDiv({ cls: 'embed-eml' });
     this.containerEl.replaceWith(emailEl);
+    emailEl.appendChild(this.containerEl);
 
     this.addHeaders(emailEl, result);
     this.addContent(emailEl, result);
