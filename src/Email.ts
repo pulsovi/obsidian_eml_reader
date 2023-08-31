@@ -1,15 +1,18 @@
 import { encode as textToBase64 } from 'js-base64';
 import { nanoid } from 'nanoid';
-import { MarkdownRenderChild } from 'obsidian';
+import { MarkdownRenderChild, Platform } from 'obsidian';
 import type { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
 import PostalMime from 'postal-mime';
 import type { Email as ParsedMail } from 'postal-mime';
+import { Converter as MdConverter } from 'showdown';
 
-import { isObject } from './util/types/object';
 import { addressToHtml } from './util/html/email';
+import { isObject } from './util/types/object';
+
 type Size = Record<'height' | 'width', string>;
 
 export default class Email extends MarkdownRenderChild {
+  /* eslint-disable @typescript-eslint/indent */
   public readonly app: App;
   public readonly file: TFile | null;
 
@@ -58,82 +61,102 @@ export default class Email extends MarkdownRenderChild {
     });
   }
 
-  /** Add email iframe content */
+  /** Add email content */
   private addContent (container: HTMLDivElement, mail: ParsedMail): void {
-    if (!mail.html) {
+    if (!((val): val is ParsedMail & { html: string } => Boolean(val.html))(mail))
       this.addVoidContent(container);
-      return;
+    else if (Platform.isMobileApp) this.addMarkdownContent(container, mail);
+    else this.addIframeContent(container, mail);
+  }
+
+    /** Add message "unable to parse the mail" at place of mail content */
+    private addVoidContent (container: HTMLDivElement): void {
+      container.createDiv({
+        cls: 'eml-content eml-content-error',
+        text: 'unable to parse the mail file',
+      });
+      container.appendChild(this.containerEl);
     }
-    const size = this.parseSize();
-    const { height, width } = size;
-    const isAutoDetect = height === 'auto' || width === 'auto';
-    const iframe = container.createEl('iframe', { cls: 'eml-content' });
 
-    if (isAutoDetect) this.addSizeDetection(iframe, mail.html, size);
-    else iframe.setAttr('src', `data:text/html;base64,${textToBase64(mail.html)}`);
+    /** Add email content without format in div */
+    private addMarkdownContent (
+      container: HTMLDivElement, mail: ParsedMail & { html: string }
+    ): void {
+      const size = this.parseSize();
+      const converter = new MdConverter();
+      const cleanMail = mail.html.replace(/(<\/?)(?:table|tr|th|td|thead|tbody)/gu, '$1div');
+      const markdown = converter.makeMarkdown(cleanMail);
+      const html = converter.makeHtml(markdown);
+      const content = container.createDiv({ cls: 'eml-content mobile-eml-content' });
 
-    if (height !== 'auto') iframe.style.height = height;
-    if (width !== 'auto') iframe.style.width = width;
-  }
+      console.info('addMarkdownContent', { container, mail, size, converter, markdown, html, content });
+      content.innerHTML = html;
+      Object.assign(content.style, size);
+    }
 
-  /** Add message "unable to parse the mail" at place of mail content */
-  private addVoidContent (container: HTMLDivElement): void {
-    container.createDiv({
-      cls: 'eml-content eml-content-error',
-      text: 'unable to parse the mail file',
-    });
-    container.appendChild(this.containerEl);
-  }
+    /** Add email content in IFrame */
+    private addIframeContent (container: HTMLDivElement, mail: ParsedMail & { html: string }): void {
+      const size = this.parseSize();
+      const { height, width } = size;
+      const isAutoDetect = height === 'auto' || width === 'auto';
+      const iframe = container.createEl('iframe', { cls: 'eml-content' });
 
-  /** Parse custom size of the content iframe */
-  private parseSize (): Size {
-    const sizeRE = /^(?<first>\d+(?:px|em|vh)?)(?:x(?<second>\d+(?:px|em|vw)?))?$/u;
-    const alt = this.containerEl.getAttr('alt') ?? '';
-    const match = sizeRE.exec(alt);
-    const pair = match?.groups ?? {
-      first: this.containerEl.getAttr('width') ?? 'auto',
-      second: this.containerEl.getAttr('height'),
-    };
-    const { first, second } = pair;
-    const height = second ?? first;
-    const width = second ? first : 'auto';
-    const size = {
-      height: (/^\d+$/u).test(height) ? `${height}px` : height,
-      width: (/^\d+$/u).test(width) ? `${width}px` : width,
-    };
-    return size;
-  }
+      if (isAutoDetect) this.addSizeDetection(iframe, mail.html, size);
+      else iframe.setAttr('src', `data:text/html;base64,${textToBase64(mail.html)}`);
 
-  /** Add script which send size of the content to the top window */
-  private addSizeDetection (iframe: HTMLIFrameElement, html: string, size: Size): void {
-    const iframeSrc = html.replace('</head>', `
-      <script>
-      ;(function IIFE () {
-        if (document.readyState === "complete") init();
-        else document.addEventListener("DOMContentLoaded", init);
+      if (height !== 'auto') iframe.style.height = height;
+      if (width !== 'auto') iframe.style.width = width;
+    }
 
-        function init () {
-          window.top.postMessage({
-            type: 'iframe size',
-            id: '${this.id}',
-            height: document.body.scrollHeight,
-            width: document.body.scrollWidth,
-          }, '*');
-        }
-      })();
-      </script>
-      </head>
-    `);
+    /** Add script which send size of the content to the top window */
+    private addSizeDetection (iframe: HTMLIFrameElement, html: string, size: Size): void {
+      const iframeSrc = html.replace('</head>', `
+        <script>
+        ;(function IIFE () {
+          if (document.readyState === "complete") init();
+          else document.addEventListener("DOMContentLoaded", init);
 
-    window.addEventListener('message', event => {
-      const data = event.data as unknown;
-      if (!isObject(data) || data.type !== 'iframe size' || data.id !== this.id) return;
-      if (size.height === 'auto' && typeof data.height === 'number')
-        iframe.style.height = `${data.height}px`;
-      if (size.width === 'auto' && typeof data.width === 'number')
-        iframe.style.width = `${data.width}px`;
-    });
+          function init () {
+            window.top.postMessage({
+              type: 'iframe size',
+              id: '${this.id}',
+              height: document.body.scrollHeight,
+              width: document.body.scrollWidth,
+            }, '*');
+          }
+        })();
+        </script>
+        </head>
+      `);
 
-    iframe.setAttr('src', `data:text/html;base64,${textToBase64(iframeSrc)}`);
-  }
+      window.addEventListener('message', event => {
+        const data = event.data as unknown;
+        if (!isObject(data) || data.type !== 'iframe size' || data.id !== this.id) return;
+        if (size.height === 'auto' && typeof data.height === 'number')
+          iframe.style.height = `${data.height}px`;
+        if (size.width === 'auto' && typeof data.width === 'number')
+          iframe.style.width = `${data.width}px`;
+      });
+
+      iframe.setAttr('src', `data:text/html;base64,${textToBase64(iframeSrc)}`);
+    }
+
+      /** Parse custom size of the content iframe */
+      private parseSize (): Size {
+        const sizeRE = /^(?<first>\d+(?:px|em|vh)?)(?:x(?<second>\d+(?:px|em|vw)?))?$/u;
+        const alt = this.containerEl.getAttr('alt') ?? '';
+        const match = sizeRE.exec(alt);
+        const pair = match?.groups ?? {
+          first: this.containerEl.getAttr('width') ?? 'auto',
+          second: this.containerEl.getAttr('height'),
+        };
+        const { first, second } = pair;
+        const height = second ?? first;
+        const width = second ? first : 'auto';
+        const size = {
+          height: (/^\d+$/u).test(height) ? `${height}px` : height,
+          width: (/^\d+$/u).test(width) ? `${width}px` : width,
+        };
+        return size;
+      }
 }

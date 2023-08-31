@@ -1,4 +1,7 @@
 {
+	"settings": {
+		"rulers": [80, 100]
+	},
 	"folders":
 	[
 		{

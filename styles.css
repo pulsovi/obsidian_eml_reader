@@ -21,3 +21,7 @@
 .embed-eml .eml-content {
   width: 100%;
 }
+
+.embed-eml .mobile-eml-content {
+  overflow: auto;
+}
