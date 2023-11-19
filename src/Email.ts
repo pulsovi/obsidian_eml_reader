@@ -7,6 +7,7 @@ import type { Email as ParsedMail } from 'postal-mime';
 import { Converter as MdConverter } from 'showdown';
 
 import { addressToHtml } from './util/html/email';
+import { textToHtml } from './util/html/escape';
 import { isObject } from './util/types/object';
 
 type Size = Record<'height' | 'width', string>;
@@ -63,11 +64,20 @@ export default class Email extends MarkdownRenderChild {
 
   /** Add email content */
   private addContent (container: HTMLDivElement, mail: ParsedMail): void {
-    if (!((val): val is ParsedMail & { html: string } => Boolean(val.html))(mail))
-      this.addVoidContent(container);
-    else if (Platform.isMobileApp) this.addMarkdownContent(container, mail);
+    if (!Email.hasContent(mail)) this.addVoidContent(container);
+    else if (Platform.isMobileApp || !Email.hasHtml(mail)) this.addMarkdownContent(container, mail);
     else this.addIframeContent(container, mail);
   }
+
+    private static hasContent (
+      val: ParsedMail
+    ): val is ParsedMail & ({ html: string } | { text: string }) {
+      return Boolean(val.html ?? val.text);
+    }
+
+    private static hasHtml (val: ParsedMail): val is ParsedMail & { html: string } {
+      return Boolean(val.html);
+    }
 
     /** Add message "unable to parse the mail" at place of mail content */
     private addVoidContent (container: HTMLDivElement): void {
@@ -80,16 +90,19 @@ export default class Email extends MarkdownRenderChild {
 
     /** Add email content without format in div */
     private addMarkdownContent (
-      container: HTMLDivElement, mail: ParsedMail & { html: string }
+      container: HTMLDivElement, mail: ParsedMail & ({ html: string } | { text: string })
     ): void {
       const size = this.parseSize();
-      const converter = new MdConverter();
-      const cleanMail = mail.html.replace(/(<\/?)(?:table|tr|th|td|thead|tbody)/gu, '$1div');
-      const markdown = converter.makeMarkdown(cleanMail);
-      const html = converter.makeHtml(markdown);
+      let html = '';
+      if (Email.hasHtml(mail)) {
+        const converter = new MdConverter();
+        const cleanMail = mail.html.replace(/(<\/?)(?:table|tr|th|td|thead|tbody)/gu, '$1div');
+        const markdown = converter.makeMarkdown(cleanMail);
+        html = converter.makeHtml(markdown);
+      }
+      else html = textToHtml(mail.text);
       const content = container.createDiv({ cls: 'eml-content mobile-eml-content' });
 
-      console.info('addMarkdownContent', { container, mail, size, converter, markdown, html, content });
       content.innerHTML = html;
       Object.assign(content.style, size);
     }
