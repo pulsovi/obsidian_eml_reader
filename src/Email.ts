@@ -140,7 +140,7 @@ export default class Email extends MarkdownRenderChild {
         })();
         </script>
         </head>
-      `);
+      `).replace('<body', `<body style="color:${getComputedStyle(document.body).color}"`);
 
       window.addEventListener('message', event => {
         const data = event.data as unknown;
