@@ -5,6 +5,16 @@
   padding: var(--size-4-2) var(--size-4-4);
 }
 
+/* Live Preview: Override Obsidian's file-embed flex centering */
+.internal-embed.file-embed.eml-processed {
+  display: block;
+  text-align: left;
+}
+
+.internal-embed.file-embed.eml-processed > .embed-eml {
+  width: 100%;
+}
+
 .eml-header {
   padding: 0 0 1em 1em;
 }
