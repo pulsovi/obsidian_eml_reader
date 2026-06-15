@@ -18,6 +18,7 @@ export default class Email extends MarkdownRenderChild {
   public readonly file: TFile | null;
 
   private readonly id = nanoid();
+  private messageHandler: ((event: MessageEvent) => void) | null = null;
 
   public constructor (elem: HTMLSpanElement, context: MarkdownPostProcessorContext, app: App) {
     super(elem);
@@ -142,17 +143,26 @@ export default class Email extends MarkdownRenderChild {
         </head>
       `).replace('<body', `<body style="color:${getComputedStyle(document.body).color}"`);
 
-      window.addEventListener('message', event => {
+      if (this.messageHandler) window.removeEventListener('message', this.messageHandler);
+      this.messageHandler = event => {
         const data = event.data as unknown;
         if (!isObject(data) || data.type !== 'iframe size' || data.id !== this.id) return;
         if (size.height === 'auto' && typeof data.height === 'number')
           iframe.style.height = `${data.height}px`;
         if (size.width === 'auto' && typeof data.width === 'number')
           iframe.style.width = `${data.width}px`;
-      });
+      };
+      window.addEventListener('message', this.messageHandler);
 
       iframe.setAttr('src', `data:text/html;base64,${textToBase64(iframeSrc)}`);
     }
+
+      public onunload (): void {
+        if (this.messageHandler) {
+          window.removeEventListener('message', this.messageHandler);
+          this.messageHandler = null;
+        }
+      }
 
       /** Parse custom size of the content iframe */
       private parseSize (): Size {
